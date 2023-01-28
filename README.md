@@ -17,6 +17,14 @@ HTTPIM Implements:
 * Caching thumbnails inside `__httim_cache__` folder that can be easily deleted with `python httpim.py -r` when you're done
 * Showing screen-adaptive grid of folders + images + go up a level
 
+# Install as module
+
+**WARNING: this version does not have setup bundle, thus can cause problems on upgrade**
+
+Install with `pip install httpim`
+
+Run with `python -m httpim`
+
 # Usage
 
 ```
