@@ -276,6 +276,10 @@ class HTTPIM(BaseHTTPRequestHandler):
 			path = path[1:]
 		path = '/' + path
 
+		# Prevent go up/down/elsewhere via canonical path injection
+		if '/../' in path or '/./' in path or path.startswith('../') or path.startswith('./'):
+			return self._do_404()
+
 		# Cached file response
 		if path.startswith('/__httpim_cache__/'):
 			cachepath = os.path.join(args.cachepath, path[len('/__httpim_cache__/'):])
@@ -283,10 +287,6 @@ class HTTPIM(BaseHTTPRequestHandler):
 		else:
 			cachepath = None
 			realpath = os.path.join(args.path, path[1:]) # Strip /
-
-		# Prevent go up/down/elsewhere via canonical path injection
-		if '/../' in path or '/./' in path or path.startswith('../') or path.startswith('./'):
-			return self._do_404()
 
 		# Check if directory
 		if os.path.isdir(realpath):
@@ -322,7 +322,8 @@ class HTTPIM(BaseHTTPRequestHandler):
 		# Return normal file
 		else:
 			# As normal file
-			return self._do_file(realpath)
+			if os.path.exists(realpath):
+				return self._do_file(realpath)
 
 if __name__ == '__main__':
 
