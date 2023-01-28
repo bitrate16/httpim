@@ -199,6 +199,85 @@ def url_pathjoin(a: str, b: str):
 		c = '/' + c
 	return c
 
+def check_url_path_safety(url_path: str) -> bool:
+	"""
+	Checks if URL path is safe for path concatenation.
+
+	Returns Fals if URL path contains canonical rebase and/or parent/home/curdir
+	placements, excessive slashes at the beginning or leading/trailing spaces
+	(^ - start, $  -end of string):
+	* `foo/../bar` or `^../foo` or `foo/..$`
+	* `foo/./bar` or `^./foo` or `foo/.$`
+	* `foo/~/bar` or `^~/foo` or `foo/~$`
+	* `^//foo`
+	* `^ foo` or `foo $`
+
+	@from: pegasko.art/application/path.py
+	"""
+
+	# No:
+	# ~/
+	# ./
+	# ../
+	# //
+	# " "
+	if url_path.startswith((
+		'~/',  # Home jump
+		'./',  # Workdir jump
+		'../', # Up jump
+		'//',  # Double slash
+		' ',   # Leading space
+	)):
+		return False
+
+	# No:
+	# /~
+	# /.
+	# /..
+	# " "
+	if url_path.endswith((
+		'/~',  # Home postjump
+		'/.',  # Workdir postjump
+		'/..', # Up postjump
+		' ',   # Trailing space
+	)):
+		return False
+
+	# No:
+	# /./
+	# /../
+	# /~/
+	if '/./' in url_path or '/../' in url_path or '/~/' in url_path:
+		return False
+
+	return True
+
+def url_path_strip(url_path: str) -> str:
+	"""
+	Strip URL path string to remove leading/trailing spaced, trailing slash and
+	duplicating leading slashes:
+
+	Converts:
+	* `" foo/bar " -> "foo/bar"`
+	* `"///foo/bar///" -> "/foo/bar"`
+	* `" / /  /foo/bar/ /   / " -> "/foo/bar"`
+
+	Returns url as `foo/bar/baz` without leading slash
+
+	@from: pegasko.art/application/path.py
+	"""
+
+	cut = 0
+	while (len(url_path) - cut) != 0 and (url_path[cut] == ' ' or url_path[cut] == '/'):
+		cut += 1
+	url_path = url_path[cut:]
+
+	cut = 0
+	while (len(url_path) - cut) != 0 and (url_path[len(url_path)-cut-1] == ' ' or url_path[len(url_path)-cut-1] == '/'):
+		cut += 1
+	url_path = url_path[:len(url_path)-cut]
+	return url_path
+
 class HTTPIM(BaseHTTPRequestHandler):
 	def setup(self):
 		BaseHTTPRequestHandler.setup(self)
@@ -270,14 +349,10 @@ class HTTPIM(BaseHTTPRequestHandler):
 		"""Handle complete GET"""
 		parsed = urlparse(self.path)
 		path: str = unquote(parsed.path.strip())
-		while path != '' and path.endswith('/'):
-			path = path[:-1]
-		while path != '' and path.startswith('/'):
-			path = path[1:]
-		path = '/' + path
+		path = '/' + url_path_strip(path)
 
 		# Prevent go up/down/elsewhere via canonical path injection
-		if '/../' in path or '/./' in path or path.startswith('../') or path.startswith('./'):
+		if not check_url_path_safety(path):
 			return self._do_404()
 
 		# Cached file response

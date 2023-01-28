@@ -1,4 +1,4 @@
-httpim - HTTP-based imaeg gallery server with thumbnails & caching
+httpim - HTTP-based image gallery server with thumbnails & caching
 ------------------------------------------------------------------
 
 # Why?
