@@ -69,12 +69,7 @@ def iter_dir_page_bytes(realpath: str, relpath: str):
 
 	try:
 		files = os.listdir(realpath)
-
-		# (name, url_relpath (starts with /))
-		dirs = [ (f, url_pathjoin(relpath, f)) for f in files if os.path.isdir(os.path.join(realpath, f)) ]
-		files = [ (f, url_pathjoin(relpath, f)) for f in files if os.path.isfile(os.path.join(realpath, f)) ]
 	except:
-		dirs = []
 		files = []
 
 	# Write first part
@@ -171,16 +166,21 @@ def iter_dir_page_bytes(realpath: str, relpath: str):
 	if relpath != '/':
 		yield format_up_dir_html(relpath).encode('utf8')
 
-	# Write directories
-	for dir in dirs:
-		yield format_dir_html(dir[0], dir[1]).encode('utf8')
-
-	# Write files
+	# Process dirs & files
 	for file in files:
-		if file_can_thumb(file[0]):
-			yield format_thumb_html(file[0], file[1]).encode('utf8')
-		else:
-			yield format_file_html(file[0], file[1]).encode('utf8')
+		file_relpath = url_pathjoin(relpath, file)
+		file_realpath = os.path.join(realpath, file)
+
+		# Send file
+		if os.path.isfile(file_realpath):
+			if file_can_thumb(file):
+				yield format_thumb_html(file, file_relpath).encode('utf8')
+			else:
+				yield format_file_html(file, file_relpath).encode('utf8')
+
+		# Send dir
+		elif os.path.isdir(file_realpath):
+			yield format_dir_html(file, file_relpath).encode('utf8')
 
 	yield """	</body>
 </html>""".encode('utf8')
@@ -344,6 +344,7 @@ class HTTPIM(BaseHTTPRequestHandler):
 
 		for frag in iter_dir_page_bytes(realpath, relpath):
 			self.wfile.write(frag)
+			self.wfile.flush()
 
 	def do_GET(self):
 		"""Handle complete GET"""
