@@ -270,14 +270,11 @@ class HTTPIM(BaseHTTPRequestHandler):
 		"""Handle complete GET"""
 		parsed = urlparse(self.path)
 		path: str = unquote(parsed.path.strip())
-		while path != '/' and path.endswith('/'):
+		while path != '' and path.endswith('/'):
 			path = path[:-1]
-		if path == '':
-			path = '/'
-
-		# Prevent go up/down/elsewhere via canonical path injection
-		if '/../' in path or '/./' in path or path.startswith('../') or path.startswith('./'):
-			return self._do_404()
+		while path != '' and path.startswith('/'):
+			path = path[1:]
+		path = '/' + path
 
 		# Cached file response
 		if path.startswith('/__httpim_cache__/'):
@@ -286,6 +283,10 @@ class HTTPIM(BaseHTTPRequestHandler):
 		else:
 			cachepath = None
 			realpath = os.path.join(args.path, path[1:]) # Strip /
+
+		# Prevent go up/down/elsewhere via canonical path injection
+		if '/../' in path or '/./' in path or path.startswith('../') or path.startswith('./'):
+			return self._do_404()
 
 		# Check if directory
 		if os.path.isdir(realpath):
