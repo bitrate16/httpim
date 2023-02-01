@@ -28,7 +28,7 @@ Run with `python -m httpim`
 # Usage
 
 ```
-usage: httpim.py [-h] [-l LISTEN] [-p PORT] [-d PATH] [-t THUMB] [--license] [-r]
+usage: httpim.py [-h] [-l LISTEN] [-p PORT] [-d PATH] [-t THUMB] [--license] [-c] [-r]
 
 httpim
 
@@ -41,7 +41,8 @@ optional arguments:
   -t THUMB, --thumb THUMB
                         Thumbnail size
   --license             License
-  -r, --clear-cache     Clear cache
+  -c, --clear-cache     Clear cache
+  -r, --reverse         Reverse file order
 ```
 
 # LICENSE

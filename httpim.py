@@ -166,21 +166,31 @@ def iter_dir_page_bytes(realpath: str, relpath: str):
 	if relpath != '/':
 		yield format_up_dir_html(relpath).encode('utf8')
 
-	# Process dirs & files
+	# Files only
+	files_list = []
+
+	# Render directories
 	for file in files:
 		file_relpath = url_pathjoin(relpath, file)
 		file_realpath = os.path.join(realpath, file)
 
-		# Send file
+		# Append file to send later
 		if os.path.isfile(file_realpath):
-			if file_can_thumb(file):
-				yield format_thumb_html(file, file_relpath).encode('utf8')
-			else:
-				yield format_file_html(file, file_relpath).encode('utf8')
+			files_list.append(file)
 
 		# Send dir
 		elif os.path.isdir(file_realpath):
 			yield format_dir_html(file, file_relpath).encode('utf8')
+
+	# Render files
+	for file in (reversed(files_list) if args.reverse else files_list):
+		file_relpath = url_pathjoin(relpath, file)
+
+		# Render depending on ext
+		if file_can_thumb(file):
+			yield format_thumb_html(file, file_relpath).encode('utf8')
+		else:
+			yield format_file_html(file, file_relpath).encode('utf8')
 
 	yield """	</body>
 </html>""".encode('utf8')
@@ -437,11 +447,18 @@ if __name__ == '__main__':
 		help='License',
 	)
 	parser.add_argument(
-		'-r',
+		'-c',
 		'--clear-cache',
 		dest='clear_cache',
 		action='store_true',
 		help='Clear cache',
+	)
+	parser.add_argument(
+		'-r',
+		'--reverse',
+		dest='reverse',
+		action='store_true',
+		help='Reverse file order',
 	)
 
 	args = parser.parse_args()
