@@ -396,7 +396,7 @@ class HTTPIM(BaseHTTPRequestHandler):
 				os.makedirs(os.path.dirname(cachepath), exist_ok=True)
 				img = Image.open(realpath)
 				img.thumbnail((args.thumb, args.thumb))
-				img.save(cachepath, 'JPEG', quality=95)
+				img.convert('RGB').save(cachepath, 'JPEG', quality=95)
 			except:
 				import traceback
 				traceback.print_exc()
